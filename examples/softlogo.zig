@@ -79,26 +79,26 @@ pub fn main() !void {
 
 fn paint(pixbuf: zwl.PixelBuffer) void {
     const ts = std.time.milliTimestamp();
-    const tsf = @intToFloat(f32, @intCast(usize, ts) % (60 * 1000000));
+    const tsf = @as(f32, @floatFromInt(@as(usize, @intCast(ts)) % (60 * 1000000)));
 
     var y: usize = 0;
     while (y < pixbuf.height) : (y += 1) {
         var x: usize = 0;
         while (x < pixbuf.width) : (x += 1) {
-            const fp = @intToFloat(f32, x * 2 + y / 2) * 0.01 + tsf * 0.005;
-            const background = stripes[@floatToInt(u32, fp) % stripes.len];
+            const fp = @as(f32, @floatFromInt(x * 2 + y / 2)) * 0.01 + tsf * 0.005;
+            const background = stripes[@as(u32, @intFromFloat(fp)) % stripes.len];
 
             const mid = [2]i32{ pixbuf.width >> 1, pixbuf.height >> 1 };
             if (x < mid[0] - 100 or x >= mid[0] + 100 or y < mid[1] - 35 or y >= mid[1] + 35) {
-                pixbuf.data[y * pixbuf.width + x] = @bitCast(u32, background);
+                pixbuf.data[y * pixbuf.width + x] = @as(u32, @bitCast(background));
             } else {
-                const tx = @intCast(usize, @intCast(isize, x) - (mid[0] - 100));
-                const ty = @intCast(usize, @intCast(isize, y) - (mid[1] - 35));
+                const tx = @as(usize, @intCast(@as(isize, @intCast(x)) - (mid[0] - 100)));
+                const ty = @as(usize, @intCast(@as(isize, @intCast(y)) - (mid[1] - 35)));
                 const pix = logo[ty][tx];
-                const B = @intCast(u16, pix[0]) * pix[3] + @intCast(u16, background[0]) * (255 - pix[3]);
-                const G = @intCast(u16, pix[1]) * pix[3] + @intCast(u16, background[1]) * (255 - pix[3]);
-                const R = @intCast(u16, pix[2]) * pix[3] + @intCast(u16, background[2]) * (255 - pix[3]);
-                pixbuf.data[y * pixbuf.width + x] = @bitCast(u32, [4]u8{ @intCast(u8, B >> 8), @intCast(u8, G >> 8), @intCast(u8, R >> 8), 0 });
+                const B = @as(u16, @intCast(pix[0])) * pix[3] + @as(u16, @intCast(background[0])) * (255 - pix[3]);
+                const G = @as(u16, @intCast(pix[1])) * pix[3] + @as(u16, @intCast(background[1])) * (255 - pix[3]);
+                const R = @as(u16, @intCast(pix[2])) * pix[3] + @as(u16, @intCast(background[2])) * (255 - pix[3]);
+                pixbuf.data[y * pixbuf.width + x] = @as(u32, @bitCast([4]u8{ @as(u8, @intCast(B >> 8)), @as(u8, @intCast(G >> 8)), @as(u8, @intCast(R >> 8)), 0 }));
             }
         }
     }
