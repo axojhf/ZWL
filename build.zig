@@ -1,40 +1,29 @@
 const std = @import("std");
-const Builder = std.build.Builder;
-const CrossTarget = std.zig.CrossTarget;
-const Mode = std.builtin.Mode;
-// const deps = @import("./deps.zig");
 
-fn buildSoftlogo(b: *Builder, target: CrossTarget, mode: Mode) void {
-    const softlogo = b.addExecutable("softlogo", "examples/softlogo.zig");
-    // deps.addAllTo(softlogo);
-    softlogo.addPackagePath("zwl", "src/zwl.zig");
-    softlogo.single_threaded = true;
-    softlogo.subsystem = .Windows;
-    softlogo.setTarget(target);
-    softlogo.setBuildMode(mode);
-    softlogo.install();
-
-    const softlogo_run_cmd = softlogo.run();
-    const softlogo_run_step = b.step("run-softlogo", "Run the softlogo example");
-    softlogo_run_step.dependOn(&softlogo_run_cmd.step);
-}
-
-fn buildWayland(b: *Builder, target: CrossTarget, mode: Mode) void {
-    const wayland = b.addExecutable("wayland", "examples/wayland.zig");
-    wayland.setTarget(target);
-    wayland.setBuildMode(mode);
-    wayland.addPackagePath("zwl", "src/zwl.zig");
-    wayland.install();
-
-    const wayland_run_cmd = wayland.run();
-    const wayland_run_step = b.step("run-wayland", "Run the wayland example");
-    wayland_run_step.dependOn(&wayland_run_cmd.step);
-}
-
-pub fn build(b: *Builder) void {
+pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
-    const mode = b.standardReleaseOptions();
+    const optimize = b.standardOptimizeOption(.{});
 
-    buildWayland(b, target, mode);
-    buildSoftlogo(b, target, mode);
+    const lib = b.addStaticLibrary(.{
+        .name = "zwl",
+        .root_source_file = .{ .path = "src/zwl.zig" },
+        .target = target,
+        .optimize = optimize,
+    });
+    const zigwin32_dep = b.dependency("zigwin32", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    lib.addModule("win32", zigwin32_dep.module("zigwin32"));
+    _ = b.addModule("zwl", .{
+        .source_file = .{ .path = "src/zwl.zig" },
+    });
+    // b.installArtifact(lib);
 }
+
+// pub fn link(b: *std.Build, step: *std.build.CompileStep) !void {
+//     step.linkLibrary(b.dependency("zigwin32", .{
+//         .target = step.target,
+//         .optimize = step.optimize,
+//     }).artifact("zigwin32"));
+// }

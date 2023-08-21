@@ -43,7 +43,7 @@ const ReplyCBuffer = struct {
         if (self.len() == self.mem.len - 1) return error.OutOfMemory;
         self.mem[self.head] = .{ .handler = handler, .seq = self.seq_next };
         self.seq_next += 1;
-        self.head = @intCast(u8, (self.head + 1) % self.mem.len);
+        self.head = @as(u8, @intCast((self.head + 1) % self.mem.len));
     }
 
     pub fn ignoreEvent(self: *ReplyCBuffer) void {
@@ -57,7 +57,7 @@ const ReplyCBuffer = struct {
             if (ev.seq < seq) {
                 unreachable;
             } else if (ev.seq == seq) {
-                self.tail = @intCast(u8, (self.tail + 1) % self.mem.len);
+                self.tail = @as(u8, @intCast((self.tail + 1) % self.mem.len));
                 return ev.handler;
             } else {
                 return null;
@@ -184,7 +184,7 @@ pub fn Platform(comptime Parent: anytype) type {
             // Get atoms
             try writer.writeAll(std.mem.asBytes(&types.InternAtom{
                 .if_exists = 0,
-                .request_length = @intCast(u16, (8 + "_MOTIF_WM_HINTS".len + xpad("_MOTIF_WM_HINTS".len)) >> 2),
+                .request_length = @as(u16, @intCast((8 + "_MOTIF_WM_HINTS".len + xpad("_MOTIF_WM_HINTS".len)) >> 2)),
                 .name_length = "_MOTIF_WM_HINTS".len,
             }));
             try writer.writeAll("_MOTIF_WM_HINTS");
@@ -197,7 +197,7 @@ pub fn Platform(comptime Parent: anytype) type {
             if (self.present_major_opcode == 0) return error.PresentExtensionNotPresent;
 
             std.log.scoped(.zwl).info("Platform Initialized: X11", .{});
-            return @ptrCast(*Parent, self);
+            return @as(*Parent, @ptrCast(self));
         }
 
         fn handleInitEvents(self: *Self) !void {
@@ -214,27 +214,27 @@ pub fn Platform(comptime Parent: anytype) type {
                 const seq = std.mem.readIntNative(u16, evdata[2..4]);
                 // const extlen = std.mem.readIntNative(u32, evdata[4..8]) * 4;
 
-                if (evtype == @enumToInt(types.XEventCode.Error)) {
+                if (evtype == @intFromEnum(types.XEventCode.Error)) {
                     unreachable; // We will never make mistakes during init
-                } else if (evtype != @enumToInt(types.XEventCode.Reply)) {
+                } else if (evtype != @intFromEnum(types.XEventCode.Reply)) {
                     continue; // The only possible events here are stuff we don't care about
                 }
 
                 const handler = self.replies.get(seq) orelse unreachable;
                 switch (handler) {
                     .ExtensionQueryBigRequests => {
-                        const qreply = @ptrCast(*const types.QueryExtensionReply, &evdata);
+                        const qreply = @as(*const types.QueryExtensionReply, @ptrCast(&evdata));
                         if (qreply.present != 0) {
                             try writer.writeAll(std.mem.asBytes(&types.BigReqEnable{ .opcode = qreply.major_opcode }));
                             try self.replies.push(.BigRequestsEnable);
                         }
                     },
                     .BigRequestsEnable => {
-                        const qreply = @ptrCast(*const types.BigReqEnableReply, &evdata);
+                        const qreply = @as(*const types.BigReqEnableReply, @ptrCast(&evdata));
                         self.max_req_len = qreply.max_req_len;
                     },
                     .ExtensionQueryXKB => {
-                        const qreply = @ptrCast(*const types.QueryExtensionReply, &evdata);
+                        const qreply = @as(*const types.QueryExtensionReply, @ptrCast(&evdata));
                         if (qreply.present != 0) {
                             self.xkb_first_event = qreply.major_opcode;
                             self.xkb_opcode_major = qreply.first_event;
@@ -242,7 +242,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         }
                     },
                     .ExtensionQueryMitShm => {
-                        const qreply = @ptrCast(*const types.QueryExtensionReply, &evdata);
+                        const qreply = @as(*const types.QueryExtensionReply, @ptrCast(&evdata));
                         if (qreply.present != 0) {
                             self.mitshm_major_opcode = qreply.major_opcode;
                             self.mitshm_first_event = qreply.first_event;
@@ -254,7 +254,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         // Just need version 1, so whatever
                     },
                     .ExtensionQueryPresent => {
-                        const qreply = @ptrCast(*const types.QueryExtensionReply, &evdata);
+                        const qreply = @as(*const types.QueryExtensionReply, @ptrCast(&evdata));
                         if (qreply.present != 0) {
                             self.present_major_opcode = qreply.major_opcode;
                             self.present_first_event = qreply.first_event;
@@ -266,7 +266,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         // Just need version 1, so whatever
                     },
                     .ExtensionQueryXFixes => {
-                        const qreply = @ptrCast(*const types.QueryExtensionReply, &evdata);
+                        const qreply = @as(*const types.QueryExtensionReply, @ptrCast(&evdata));
                         if (qreply.present != 0) {
                             self.xfixes_major_opcode = qreply.major_opcode;
                             self.xfixes_first_event = qreply.first_event;
@@ -278,7 +278,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         // Don't need to verify the version. We depend on the Present extension that depends on this, so whatever.
                     },
                     .AtomMotifWmHints => {
-                        const qreply = @ptrCast(*const types.InternAtomReply, &evdata);
+                        const qreply = @as(*const types.InternAtomReply, @ptrCast(&evdata));
                         self.atom_motif_wm_hints = qreply.atom;
                     },
                     // else => unreachable, // The other events cannot appear during init
@@ -324,10 +324,10 @@ pub fn Platform(comptime Parent: anytype) type {
                 }
 
                 const evdata = self.rbuf[p .. p + generic_event_size];
-                const evtype = @intToEnum(types.XEventCode, evdata[0] & 0x7F);
+                const evtype = @as(types.XEventCode, @enumFromInt(evdata[0] & 0x7F));
 
                 if (evtype == .GenericEvent) {
-                    const gev = @ptrCast(*const types.GenericEvent, @alignCast(4, evdata.ptr));
+                    const gev: *const types.GenericEvent = @ptrCast(@alignCast(evdata.ptr));
 
                     // std.log.info("Size: {}", .{generic_event_size + gev.length * 4});
                     // std.time.sleep(1000000);
@@ -338,9 +338,9 @@ pub fn Platform(comptime Parent: anytype) type {
 
                     if (gev.extension == self.present_major_opcode) {
                         if (gev.evtype == 1) {
-                            const present_complete = @ptrCast(*const types.PresentCompleteNotify, @alignCast(8, evdata.ptr)); // if we ever have an extended event with an odd number of bytes, this alignment will explode
+                            const present_complete: *const types.PresentCompleteNotify = @ptrCast(@alignCast(evdata.ptr)); // if we ever have an extended event with an odd number of bytes, this alignment will explode
                             if (self.getWindowById(present_complete.window)) |window| {
-                                return Parent.Event{ .WindowVBlank = @ptrCast(*Parent.Window, window) };
+                                return Parent.Event{ .WindowVBlank = @as(*Parent.Window, @ptrCast(window)) };
                             }
                         }
                     } else {
@@ -350,7 +350,7 @@ pub fn Platform(comptime Parent: anytype) type {
                     defer p += generic_event_size;
                     switch (evtype) {
                         .Error => {
-                            const ev = @ptrCast(*const types.XEventError, @alignCast(4, evdata.ptr));
+                            const ev: *const types.XEventError = @ptrCast(@alignCast(evdata.ptr));
                             std.log.err("{}: {}", .{ self.replies.seq_next, ev });
                             unreachable;
                         },
@@ -363,12 +363,12 @@ pub fn Platform(comptime Parent: anytype) type {
                             // Whatever
                         },
                         .Expose => {
-                            const ev = @ptrCast(*const types.Expose, @alignCast(4, evdata.ptr));
+                            const ev: *const types.Expose = @ptrCast(@alignCast(evdata.ptr));
                             if (self.getWindowById(ev.window)) |window| {
                                 // TODO: Not greater than underlying buffer...?
                                 return Parent.Event{
                                     .WindowDamaged = .{
-                                        .window = @ptrCast(*Parent.Window, window),
+                                        .window = @as(*Parent.Window, @ptrCast(window)),
                                         .x = ev.x,
                                         .y = ev.y,
                                         .w = ev.width,
@@ -378,20 +378,20 @@ pub fn Platform(comptime Parent: anytype) type {
                             }
                         },
                         .ConfigureNotify => {
-                            const ev = @ptrCast(*const types.ConfigureNotify, @alignCast(4, evdata.ptr));
+                            const ev: *const types.ConfigureNotify = @ptrCast(@alignCast(evdata.ptr));
                             if (self.getWindowById(ev.window)) |window| {
                                 if (window.width != ev.width or window.height != ev.height) {
                                     window.width = ev.width;
                                     window.height = ev.height;
-                                    return Parent.Event{ .WindowResized = @ptrCast(*Parent.Window, window) };
+                                    return Parent.Event{ .WindowResized = @as(*Parent.Window, @ptrCast(window)) };
                                 }
                             }
                         },
                         .DestroyNotify => {
-                            const ev = @ptrCast(*const types.DestroyNotify, @alignCast(4, evdata.ptr));
+                            const ev: *const types.DestroyNotify = @ptrCast(@alignCast(evdata.ptr));
                             if (self.getWindowById(ev.window)) |window| {
                                 window.handle = 0;
-                                return Parent.Event{ .WindowDestroyed = @ptrCast(*Parent.Window, window) };
+                                return Parent.Event{ .WindowDestroyed = @as(*Parent.Window, @ptrCast(window)) };
                             }
                         },
 
@@ -401,7 +401,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         .ButtonRelease,
                         .MotionNotify,
                         => {
-                            const ev = @ptrCast(*const types.InputDeviceEvent, @alignCast(4, evdata.ptr));
+                            const ev: *const types.InputDeviceEvent = @ptrCast(@alignCast(evdata.ptr));
                             if (self.getWindowById(ev.event)) |_| {
                                 switch (evtype) {
                                     .KeyPress,
@@ -424,7 +424,7 @@ pub fn Platform(comptime Parent: anytype) type {
                                         var bev = zwl.MouseButtonEvent{
                                             .x = ev.event_x,
                                             .y = ev.event_y,
-                                            .button = @intToEnum(zwl.MouseButton, ev.detail),
+                                            .button = @as(zwl.MouseButton, @enumFromInt(ev.detail)),
                                         };
 
                                         return switch (evtype) {
@@ -456,11 +456,11 @@ pub fn Platform(comptime Parent: anytype) type {
 
         fn getWindowById(self: *Self, id: u32) ?*Window {
             if (Parent.settings.single_window) {
-                const win = @ptrCast(*Window, self.parent.window);
+                const win = @as(*Window, @ptrCast(self.parent.window));
                 if (id == win.handle) return win;
             } else {
                 for (self.parent.windows) |pwin| {
-                    const win = @ptrCast(*Window, pwin);
+                    const win = @as(*Window, @ptrCast(pwin));
                     if (win.handle == id) return win;
                 }
             }
@@ -484,7 +484,7 @@ pub fn Platform(comptime Parent: anytype) type {
             if (options.visible == true) try window.map(writer);
             try wbuf.flush();
 
-            return @ptrCast(*Parent.Window, window);
+            return @as(*Parent.Window, @ptrCast(window));
         }
 
         const WindowSWData = struct {
@@ -508,7 +508,7 @@ pub fn Platform(comptime Parent: anytype) type {
             pub fn init(self: *Window, platform: *Self, options: zwl.WindowOptions, writer: anytype) !void {
                 self.* = .{
                     .parent = .{
-                        .platform = @ptrCast(*Parent, platform),
+                        .platform = @as(*Parent, @ptrCast(platform)),
                     },
                     .width = options.width orelse 800,
                     .height = options.height orelse 600,
@@ -585,7 +585,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             pub fn deinit(self: *Window) void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
 
                 var wbuf = std.io.bufferedWriter(platform.file.writer());
                 var writer = wbuf.writer();
@@ -625,7 +625,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             pub fn configure(self: *Window, options: zwl.WindowOptions) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 var wbuf = std.io.bufferedWriter(platform.file.writer());
                 var writer = wbuf.writer();
 
@@ -656,7 +656,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             pub fn mapPixels(self: *Window) !zwl.PixelBuffer {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 var wbuf = std.io.bufferedWriter(platform.file.writer());
                 var writer = wbuf.writer();
 
@@ -681,14 +681,14 @@ pub fn Platform(comptime Parent: anytype) type {
 
                     // Todo: MIT-SHM
 
-                    self.sw.?.data = try platform.parent.allocator.realloc(self.sw.?.data, @intCast(usize, self.sw.?.width) * @intCast(usize, self.sw.?.height));
+                    self.sw.?.data = try platform.parent.allocator.realloc(self.sw.?.data, @as(usize, @intCast(self.sw.?.width)) * @as(usize, @intCast(self.sw.?.height)));
                 }
                 try wbuf.flush();
                 return zwl.PixelBuffer{ .data = self.sw.?.data.ptr, .width = self.sw.?.width, .height = self.sw.?.height };
             }
 
             pub fn submitPixels(self: *Window, updates: []const zwl.UpdateArea) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 var wbuf = std.io.bufferedWriter(platform.file.writer());
                 var writer = wbuf.writer();
 
@@ -728,7 +728,7 @@ pub fn Platform(comptime Parent: anytype) type {
                 // Set the change region
                 const set_region = types.SetRegion{
                     .opcode = platform.xfixes_major_opcode,
-                    .length_request = 2 + @intCast(u16, updates.len * 2),
+                    .length_request = 2 + @as(u16, @intCast(updates.len * 2)),
                     .region = self.sw.?.region,
                 };
                 try writer.writeAll(std.mem.asBytes(&set_region));
@@ -771,25 +771,25 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             fn map(self: *Window, writer: anytype) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 try writer.writeAll(std.mem.asBytes(&types.MapWindow{ .id = self.handle }));
                 platform.replies.ignoreEvent();
             }
 
             fn unmap(self: *Window, writer: anytype) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 try writer.writeAll(std.mem.asBytes(&types.UnmapWindow{ .id = self.handle }));
                 platform.replies.ignoreEvent();
             }
 
             fn disableResizeable(self: *Window, writer: anytype) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
 
                 const size_hints_request = types.ChangeProperty{
                     .window = self.handle,
-                    .request_length = @intCast(u16, (@sizeOf(types.ChangeProperty) + @sizeOf(types.SizeHints)) >> 2),
-                    .property = @enumToInt(types.BuiltinAtom.WM_NORMAL_HINTS),
-                    .property_type = @enumToInt(types.BuiltinAtom.WM_SIZE_HINTS),
+                    .request_length = @as(u16, @intCast((@sizeOf(types.ChangeProperty) + @sizeOf(types.SizeHints)) >> 2)),
+                    .property = @intFromEnum(types.BuiltinAtom.WM_NORMAL_HINTS),
+                    .property_type = @intFromEnum(types.BuiltinAtom.WM_SIZE_HINTS),
                     .format = 32,
                     .length = @sizeOf(types.SizeHints) >> 2,
                 };
@@ -806,24 +806,24 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             fn enableResizeable(self: *Window, writer: anytype) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 const size_hints_request = types.DeleteProperty{
                     .window = self.handle,
-                    .property = @enumToInt(types.BuiltinAtom.WM_NORMAL_HINTS),
+                    .property = @intFromEnum(types.BuiltinAtom.WM_NORMAL_HINTS),
                 };
                 try writer.writeAll(std.mem.asBytes(&size_hints_request));
                 platform.replies.ignoreEvent();
             }
 
             fn setTitle(self: *Window, writer: anytype, title: []const u8) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 const title_request = types.ChangeProperty{
                     .window = self.handle,
-                    .request_length = @intCast(u16, (@sizeOf(types.ChangeProperty) + title.len + xpad(title.len)) >> 2),
-                    .property = @enumToInt(types.BuiltinAtom.WM_NAME),
-                    .property_type = @enumToInt(types.BuiltinAtom.STRING),
+                    .request_length = @as(u16, @intCast((@sizeOf(types.ChangeProperty) + title.len + xpad(title.len)) >> 2)),
+                    .property = @intFromEnum(types.BuiltinAtom.WM_NAME),
+                    .property_type = @intFromEnum(types.BuiltinAtom.STRING),
                     .format = 8,
-                    .length = @intCast(u32, title.len),
+                    .length = @as(u32, @intCast(title.len)),
                 };
                 try writer.writeAll(std.mem.asBytes(&title_request));
                 try writer.writeAll(title);
@@ -832,15 +832,15 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             fn disableDecorations(self: *Window, writer: anytype) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 const hints = types.MotifHints{ .flags = 2, .functions = 0, .decorations = 0, .input_mode = 0, .status = 0 };
                 const hints_request = types.ChangeProperty{
                     .window = self.handle,
-                    .request_length = @intCast(u16, (@sizeOf(types.ChangeProperty) + @sizeOf(types.MotifHints)) >> 2),
+                    .request_length = @as(u16, @intCast((@sizeOf(types.ChangeProperty) + @sizeOf(types.MotifHints)) >> 2)),
                     .property = platform.atom_motif_wm_hints,
                     .property_type = platform.atom_motif_wm_hints,
                     .format = 32,
-                    .length = @intCast(u32, @sizeOf(types.MotifHints) >> 2),
+                    .length = @as(u32, @intCast(@sizeOf(types.MotifHints) >> 2)),
                 };
                 try writer.writeAll(std.mem.asBytes(&hints_request));
                 try writer.writeAll(std.mem.asBytes(&hints));
@@ -848,7 +848,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             fn enableDecorations(self: *Window, writer: anytype) !void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
                 const size_hints_request = types.DeleteProperty{
                     .window = self.handle,
                     .property = platform.atom_motif_wm_hints,
@@ -861,7 +861,7 @@ pub fn Platform(comptime Parent: anytype) type {
 }
 
 fn xpad(n: usize) usize {
-    return @bitCast(usize, (-%@bitCast(isize, n)) & 3);
+    return @as(usize, @bitCast((-%@as(isize, @bitCast(n))) & 3));
 }
 
 fn displayConnectUnix(display_info: DisplayInfo) !std.net.Stream {
@@ -871,8 +871,8 @@ fn displayConnectUnix(display_info: DisplayInfo) !std.net.Stream {
     var addr = std.os.sockaddr.un{ .path = [_]u8{0} ** 108 };
     std.mem.copy(u8, addr.path[0..], "\x00/tmp/.X11-unix/X");
     _ = std.fmt.formatIntBuf(addr.path["\x00/tmp/.X11-unix/X".len..], display_info.display, 10, .lower, .{});
-    const addrlen = 1 + std.mem.len(@ptrCast([*:0]u8, addr.path[1..]));
-    try std.os.connect(socket, @ptrCast(*const std.os.sockaddr, &addr), @sizeOf(std.os.sockaddr.un) - @intCast(u32, addr.path.len - addrlen));
+    const addrlen = 1 + std.mem.len(@as([*:0]u8, @ptrCast(addr.path[1..])));
+    try std.os.connect(socket, @as(*const std.os.sockaddr, @ptrCast(&addr)), @sizeOf(std.os.sockaddr.un) - @as(u32, @intCast(addr.path.len - addrlen)));
     return std.net.Stream{ .handle = socket };
 }
 
@@ -880,7 +880,7 @@ fn displayConnectTCP(display_info: DisplayInfo) !std.net.Stream {
     const hostname = if (std.mem.eql(u8, display_info.host, "")) "127.0.0.1" else display_info.host;
     var tmpmem: [4096]u8 = undefined;
     var tmpalloc = std.heap.FixedBufferAllocator.init(tmpmem[0..]);
-    const file = try std.net.tcpConnectToHost(tmpalloc.allocator(), hostname, 6000 + @intCast(u16, display_info.display));
+    const file = try std.net.tcpConnectToHost(tmpalloc.allocator(), hostname, 6000 + @as(u16, @intCast(display_info.display)));
     errdefer file.close();
     // Set TCP_NODELAY?
     return file;

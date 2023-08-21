@@ -262,28 +262,28 @@ pub fn Platform(comptime _settings: PlatformSettings) type {
 
         pub fn deinit(self: *Self) void {
             switch (self.type) {
-                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.deinit(@ptrCast(*PlatformX11, self)),
-                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.deinit(@ptrCast(*PlatformWayland, self)),
-                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.deinit(@ptrCast(*PlatformWindows, self)),
-                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.deinit(@ptrCast(*PlatformXlib, self)),
+                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.deinit(@as(*PlatformX11, @ptrCast(self))),
+                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.deinit(@as(*PlatformWayland, @ptrCast(self))),
+                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.deinit(@as(*PlatformWindows, @ptrCast(self))),
+                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.deinit(@as(*PlatformXlib, @ptrCast(self))),
             }
         }
 
         pub fn waitForEvent(self: *Self) anyerror!Event {
             return switch (self.type) {
-                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.waitForEvent(@ptrCast(*PlatformX11, self)),
-                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.waitForEvent(@ptrCast(*PlatformWayland, self)),
-                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.waitForEvent(@ptrCast(*PlatformWindows, self)),
-                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.waitForEvent(@ptrCast(*PlatformXlib, self)),
+                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.waitForEvent(@as(*PlatformX11, @ptrCast(self))),
+                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.waitForEvent(@as(*PlatformWayland, @ptrCast(self))),
+                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.waitForEvent(@as(*PlatformWindows, @ptrCast(self))),
+                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.waitForEvent(@as(*PlatformXlib, @ptrCast(self))),
             };
         }
 
         pub fn createWindow(self: *Self, options: WindowOptions) anyerror!*Window {
             const window = try switch (self.type) {
-                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.createWindow(@ptrCast(*PlatformX11, self), options),
-                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.createWindow(@ptrCast(*PlatformWayland, self), options),
-                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.createWindow(@ptrCast(*PlatformWindows, self), options),
-                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.createWindow(@ptrCast(*PlatformXlib, self), options),
+                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.createWindow(@as(*PlatformX11, @ptrCast(self)), options),
+                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.createWindow(@as(*PlatformWayland, @ptrCast(self)), options),
+                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.createWindow(@as(*PlatformWindows, @ptrCast(self)), options),
+                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.createWindow(@as(*PlatformXlib, @ptrCast(self)), options),
             };
             errdefer window.deinit();
 
@@ -298,10 +298,10 @@ pub fn Platform(comptime _settings: PlatformSettings) type {
 
         pub fn getOpenGlProcAddress(self: *Self, entry_point: [:0]const u8) ?*anyopaque {
             return switch (self.type) {
-                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.getOpenGlProcAddress(@ptrCast(*PlatformX11, self), entry_point),
-                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.getOpenGlProcAddress(@ptrCast(*PlatformWayland, self), entry_point),
-                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.getOpenGlProcAddress(@ptrCast(*PlatformWindows, self), entry_point),
-                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.getOpenGlProcAddress(@ptrCast(*PlatformXlib, self), entry_point),
+                .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.getOpenGlProcAddress(@as(*PlatformX11, @ptrCast(self)), entry_point),
+                .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.getOpenGlProcAddress(@as(*PlatformWayland, @ptrCast(self)), entry_point),
+                .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.getOpenGlProcAddress(@as(*PlatformWindows, @ptrCast(self)), entry_point),
+                .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.getOpenGlProcAddress(@as(*PlatformXlib, @ptrCast(self)), entry_point),
             };
         }
 
@@ -335,28 +335,28 @@ pub fn Platform(comptime _settings: PlatformSettings) type {
                 }
 
                 return switch (self.platform.type) {
-                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.deinit(@ptrCast(*PlatformX11.Window, self)),
-                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.deinit(@ptrCast(*PlatformWayland.Window, self)),
-                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.deinit(@ptrCast(*PlatformWindows.Window, self)),
-                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.deinit(@ptrCast(*PlatformXlib.Window, self)),
+                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.deinit(@as(*PlatformX11.Window, @ptrCast(self))),
+                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.deinit(@as(*PlatformWayland.Window, @ptrCast(self))),
+                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.deinit(@as(*PlatformWindows.Window, @ptrCast(self))),
+                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.deinit(@as(*PlatformXlib.Window, @ptrCast(self))),
                 };
             }
 
             pub fn configure(self: *Window, options: WindowOptions) !void {
                 return switch (self.platform.type) {
-                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.configure(@ptrCast(*PlatformX11.Window, self), options),
-                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.configure(@ptrCast(*PlatformWayland.Window, self), options),
-                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.configure(@ptrCast(*PlatformWindows.Window, self), options),
-                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.configure(@ptrCast(*PlatformXlib.Window, self), options),
+                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.configure(@as(*PlatformX11.Window, @ptrCast(self)), options),
+                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.configure(@as(*PlatformWayland.Window, @ptrCast(self)), options),
+                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.configure(@as(*PlatformWindows.Window, @ptrCast(self)), options),
+                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.configure(@as(*PlatformXlib.Window, @ptrCast(self)), options),
                 };
             }
 
             pub fn getSize(self: *Window) [2]u16 {
                 return switch (self.platform.type) {
-                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.getSize(@ptrCast(*PlatformX11.Window, self)),
-                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.getSize(@ptrCast(*PlatformWayland.Window, self)),
-                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.getSize(@ptrCast(*PlatformWindows.Window, self)),
-                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.getSize(@ptrCast(*PlatformXlib.Window, self)),
+                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.getSize(@as(*PlatformX11.Window, @ptrCast(self))),
+                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.getSize(@as(*PlatformWayland.Window, @ptrCast(self))),
+                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.getSize(@as(*PlatformWindows.Window, @ptrCast(self))),
+                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.getSize(@as(*PlatformXlib.Window, @ptrCast(self))),
                 };
             }
 
@@ -364,26 +364,26 @@ pub fn Platform(comptime _settings: PlatformSettings) type {
                 return switch (self.platform.type) {
                     .X11 => @panic("not implemented yet!"),
                     .Wayland => @panic("not implemented yet!"),
-                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.present(@ptrCast(*PlatformWindows.Window, self)),
-                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.present(@ptrCast(*PlatformXlib.Window, self)),
+                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.present(@as(*PlatformWindows.Window, @ptrCast(self))),
+                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.present(@as(*PlatformXlib.Window, @ptrCast(self))),
                 };
             }
 
             pub fn mapPixels(self: *Window) anyerror!PixelBuffer {
                 return switch (self.platform.type) {
-                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.mapPixels(@ptrCast(*PlatformX11.Window, self)),
-                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.mapPixels(@ptrCast(*PlatformWayland.Window, self)),
-                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.mapPixels(@ptrCast(*PlatformWindows.Window, self)),
-                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.mapPixels(@ptrCast(*PlatformXlib.Window, self)),
+                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.mapPixels(@as(*PlatformX11.Window, @ptrCast(self))),
+                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.mapPixels(@as(*PlatformWayland.Window, @ptrCast(self))),
+                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.mapPixels(@as(*PlatformWindows.Window, @ptrCast(self))),
+                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.mapPixels(@as(*PlatformXlib.Window, @ptrCast(self))),
                 };
             }
 
             pub fn submitPixels(self: *Window, updates: []const UpdateArea) !void {
                 return switch (self.platform.type) {
-                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.submitPixels(@ptrCast(*PlatformX11.Window, self), updates),
-                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.submitPixels(@ptrCast(*PlatformWayland.Window, self), updates),
-                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.submitPixels(@ptrCast(*PlatformWindows.Window, self), updates),
-                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.submitPixels(@ptrCast(*PlatformXlib.Window, self), updates),
+                    .X11 => if (!settings.platforms_enabled.x11) unreachable else PlatformX11.Window.submitPixels(@as(*PlatformX11.Window, @ptrCast(self)), updates),
+                    .Wayland => if (!settings.platforms_enabled.wayland) unreachable else PlatformWayland.Window.submitPixels(@as(*PlatformWayland.Window, @ptrCast(self)), updates),
+                    .Windows => if (!settings.platforms_enabled.windows) unreachable else PlatformWindows.Window.submitPixels(@as(*PlatformWindows.Window, @ptrCast(self)), updates),
+                    .Xlib => if (!settings.platforms_enabled.xlib) unreachable else PlatformXlib.Window.submitPixels(@as(*PlatformXlib.Window, @ptrCast(self)), updates),
                 };
             }
         };
@@ -414,11 +414,11 @@ pub const PixelBuffer = struct {
     height: u16,
 
     pub inline fn setPixel(self: Self, x: usize, y: usize, color: Pixel) void {
-        self.data[self.width * y + x] = @bitCast(u32, color);
+        self.data[self.width * y + x] = @as(u32, @bitCast(color));
     }
 
     pub inline fn getPixel(self: Self, x: usize, y: usize) Pixel {
-        return @bitCast(Pixel, self.data[self.width * y + x]);
+        return @as(Pixel, @bitCast(self.data[self.width * y + x]));
     }
 
     pub fn span(self: Self) []u32 {

@@ -1,0 +1,10 @@
+.{
+    .name = "zwl",
+    .version = "0.1.0",
+    .dependencies = .{
+        .zigwin32 = .{
+            .url = "https://github.com/axojhf/zigwin32/archive/84edee83aee8a3df0bc8c54d0d20c36a10120744.tar.gz",
+            .hash = "1220aac371e0613e94c36679daf6d939942cf9963e4111f964d49ffd04161146be2e",
+        },
+    },
+}

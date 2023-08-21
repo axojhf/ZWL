@@ -28,7 +28,7 @@ pub fn Platform(comptime Parent: anytype) type {
             };
 
             std.log.scoped(.zwl).info("Platform Initialized: Wayland", .{});
-            return @ptrCast(*Parent, self);
+            return @as(*Parent, @ptrCast(self));
         }
 
         pub fn deinit(self: *Self) void {
@@ -51,7 +51,7 @@ pub fn Platform(comptime Parent: anytype) type {
             // Extra settings and shit
             try wbuf.flush();
 
-            return @ptrCast(*Parent.Window, window);
+            return @as(*Parent.Window, @ptrCast(window));
         }
 
         pub const Window = struct {
@@ -60,11 +60,10 @@ pub fn Platform(comptime Parent: anytype) type {
             height: u16,
 
             pub fn init(self: *Window, parent: *Self, options: zwl.WindowOptions, writer: anytype) !void {
-                _ = options;
                 _ = writer;
                 self.* = .{
                     .parent = .{
-                        .platform = @ptrCast(*Parent, parent),
+                        .platform = @as(*Parent, @ptrCast(parent)),
                     },
                     .width = options.width orelse 800,
                     .height = options.height orelse 600,
@@ -113,6 +112,6 @@ fn displayConnect() !std.fs.File {
 
     var addr = std.os.sockaddr.un{ .path = [_]u8{0} ** 108 };
     std.mem.copy(u8, addr.path[0..], path);
-    try std.os.connect(socket, @ptrCast(*const std.os.sockaddr, &addr), @sizeOf(std.os.sockaddr.un) - @intCast(u32, addr.path.len - path.len));
+    try std.os.connect(socket, @as(*const std.os.sockaddr, @ptrCast(&addr)), @sizeOf(std.os.sockaddr.un) - @as(u32, @intCast(addr.path.len - path.len)));
     return std.fs.File{ .handle = socket };
 }

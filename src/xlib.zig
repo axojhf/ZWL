@@ -57,9 +57,9 @@ pub fn Platform(comptime Parent: anytype) type {
             };
 
             if (Parent.settings.backends_enabled.opengl) {
-                self.gl.glxCreateContextAttribsARB = @ptrCast(
+                self.gl.glxCreateContextAttribsARB = @as(
                     GlXCreateContextAttribsARB,
-                    c.glXGetProcAddress("glXCreateContextAttribsARB") orelse return error.InvalidOpenGL,
+                    @ptrCast(c.glXGetProcAddress("glXCreateContextAttribsARB") orelse return error.InvalidOpenGL),
                 );
 
                 var glx_major: c_int = 0;
@@ -85,7 +85,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             std.log.scoped(.zwl).info("Platform Initialized: Xlib", .{});
-            return @ptrCast(*Parent, self);
+            return @as(*Parent, @ptrCast(self));
         }
 
         pub fn deinit(self: *Self) void {
@@ -127,10 +127,10 @@ pub fn Platform(comptime Parent: anytype) type {
                             return Parent.Event{
                                 .WindowDamaged = .{
                                     .window = &window.parent,
-                                    .x = @intCast(u16, ev.x),
-                                    .y = @intCast(u16, ev.y),
-                                    .w = @intCast(u16, ev.width),
-                                    .h = @intCast(u16, ev.height),
+                                    .x = @as(u16, @intCast(ev.x)),
+                                    .y = @as(u16, @intCast(ev.y)),
+                                    .w = @as(u16, @intCast(ev.width)),
+                                    .h = @as(u16, @intCast(ev.height)),
                                 },
                             };
                         }
@@ -141,7 +141,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         const ev = xev.xkey;
                         if (self.getWindowById(ev.window)) |_| {
                             var kev = zwl.KeyEvent{
-                                .scancode = @intCast(u8, ev.keycode - 8),
+                                .scancode = @as(u8, @intCast(ev.keycode - 8)),
                             };
 
                             return switch (ev.type) {
@@ -157,9 +157,9 @@ pub fn Platform(comptime Parent: anytype) type {
                         const ev = xev.xbutton;
                         if (self.getWindowById(ev.window)) |_| {
                             var bev = zwl.MouseButtonEvent{
-                                .x = @intCast(i16, ev.x),
-                                .y = @intCast(i16, ev.y),
-                                .button = @intToEnum(zwl.MouseButton, @intCast(u8, ev.button)),
+                                .x = @as(i16, @intCast(ev.x)),
+                                .y = @as(i16, @intCast(ev.y)),
+                                .button = @as(zwl.MouseButton, @enumFromInt(@as(u8, @intCast(ev.button)))),
                             };
 
                             return switch (ev.type) {
@@ -174,8 +174,8 @@ pub fn Platform(comptime Parent: anytype) type {
                         if (self.getWindowById(ev.window)) |_| {
                             return Parent.Event{
                                 .MouseMotion = zwl.MouseMotionEvent{
-                                    .x = @intCast(i16, ev.x),
-                                    .y = @intCast(i16, ev.y),
+                                    .x = @as(i16, @intCast(ev.x)),
+                                    .y = @as(i16, @intCast(ev.y)),
                                 },
                             };
                         }
@@ -187,9 +187,9 @@ pub fn Platform(comptime Parent: anytype) type {
                         const ev = xev.xconfigure;
                         if (self.getWindowById(ev.window)) |window| {
                             if (window.width != ev.width or window.height != ev.height) {
-                                window.width = @intCast(u16, ev.width);
-                                window.height = @intCast(u16, ev.height);
-                                return Parent.Event{ .WindowResized = @ptrCast(*Parent.Window, window) };
+                                window.width = @as(u16, @intCast(ev.width));
+                                window.height = @as(u16, @intCast(ev.height));
+                                return Parent.Event{ .WindowResized = @as(*Parent.Window, @ptrCast(window)) };
                             }
                         }
                     },
@@ -197,7 +197,7 @@ pub fn Platform(comptime Parent: anytype) type {
                         const ev = xev.xdestroywindow;
                         if (self.getWindowById(ev.window)) |window| {
                             window.window = 0;
-                            return Parent.Event{ .WindowDestroyed = @ptrCast(*Parent.Window, window) };
+                            return Parent.Event{ .WindowDestroyed = @as(*Parent.Window, @ptrCast(window)) };
                         }
                     },
                     else => {
@@ -209,7 +209,7 @@ pub fn Platform(comptime Parent: anytype) type {
 
         pub fn getOpenGlProcAddress(self: *Self, entry_point: [:0]const u8) ?*anyopaque {
             _ = self;
-            return @intToPtr(?*anyopaque, @ptrToInt(c.glXGetProcAddress(entry_point.ptr)));
+            return @as(?*anyopaque, @ptrFromInt(@intFromPtr(c.glXGetProcAddress(entry_point.ptr))));
         }
 
         pub fn createWindow(self: *Self, options: zwl.WindowOptions) !*Parent.Window {
@@ -218,17 +218,17 @@ pub fn Platform(comptime Parent: anytype) type {
 
             try window.init(self, options);
 
-            return @ptrCast(*Parent.Window, window);
+            return @as(*Parent.Window, @ptrCast(window));
         }
 
         fn getWindowById(self: *Self, id: c.Window) ?*Window {
             if (Parent.settings.single_window) {
-                const win = @ptrCast(*Window, self.parent.window);
+                const win = @as(*Window, @ptrCast(self.parent.window));
                 if (id == win.window)
                     return win;
             } else {
                 return for (self.parent.windows) |pwin| {
-                    const win = @ptrCast(*Window, pwin);
+                    const win = @as(*Window, @ptrCast(pwin));
                     if (win.window == id)
                         return win;
                 } else null;
@@ -250,7 +250,7 @@ pub fn Platform(comptime Parent: anytype) type {
             pub fn init(self: *Window, parent: *Self, options: zwl.WindowOptions) !void {
                 self.* = .{
                     .parent = .{
-                        .platform = @ptrCast(*Parent, parent),
+                        .platform = @as(*Parent, @ptrCast(parent)),
                     },
                     .width = options.width orelse 800,
                     .height = options.height orelse 600,
@@ -330,7 +330,7 @@ pub fn Platform(comptime Parent: anytype) type {
 
                 var i: c_int = 0;
                 while (i < fbcount) : (i += 1) {
-                    const current_fbc = fbc[@intCast(usize, i)];
+                    const current_fbc = fbc[@as(usize, @intCast(i))];
                     const vi: *c.XVisualInfo = c.glXGetVisualFromFBConfig(
                         parent.display,
                         current_fbc,
@@ -358,7 +358,7 @@ pub fn Platform(comptime Parent: anytype) type {
                     }
                 }
 
-                var bestFbc = fbc[@intCast(usize, best_fbc)];
+                var bestFbc = fbc[@as(usize, @intCast(best_fbc))];
 
                 // Get a visual
                 const vi: *c.XVisualInfo = c.glXGetVisualFromFBConfig(
@@ -430,7 +430,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             pub fn deinit(self: *Window) void {
-                var platform = @ptrCast(*Self, self.parent.platform);
+                var platform = @as(*Self, @ptrCast(self.parent.platform));
 
                 if (Parent.settings.backends_enabled.opengl) {
                     if (self.gl) |gl| {
@@ -446,7 +446,7 @@ pub fn Platform(comptime Parent: anytype) type {
             }
 
             pub fn present(self: *Window) void {
-                c.glXSwapBuffers(@ptrCast(*Self, self.parent.platform).display, self.window);
+                c.glXSwapBuffers(@as(*Self, @ptrCast(self.parent.platform)).display, self.window);
             }
 
             pub fn configure(self: *Window, options: zwl.WindowOptions) !void {
@@ -472,27 +472,27 @@ pub fn Platform(comptime Parent: anytype) type {
         };
 
         inline fn RootWindow(dpy: *c.Display, screen: c_int) c.Window {
-            const private_display = @ptrCast(c._XPrivDisplay, @alignCast(@alignOf(c._XPrivDisplay), dpy));
+            const private_display: c._XPrivDisplay = @ptrCast(@alignCast(dpy));
             return ScreenOfDisplay(
                 private_display,
-                @intCast(usize, screen),
+                @as(usize, @intCast(screen)),
             ).root;
         }
 
         inline fn DefaultRootWindow(dpy: *c.Display) c.Window {
-            const private_display = @ptrCast(c._XPrivDisplay, @alignCast(@alignOf(c._XPrivDisplay), dpy));
+            const private_display: c._XPrivDisplay = @ptrCast(@alignCast(dpy));
             return ScreenOfDisplay(
                 private_display,
-                @intCast(usize, private_display.*.default_screen),
+                @as(usize, @intCast(private_display.*.default_screen)),
             ).root;
         }
 
         inline fn DefaultScreen(dpy: *c.Display) c_int {
-            return @ptrCast(c._XPrivDisplay, @alignCast(@alignOf(c._XPrivDisplay), dpy)).*.default_screen;
+            return @as(c._XPrivDisplay, @ptrCast(@alignCast(dpy))).*.default_screen;
         }
 
         inline fn ScreenOfDisplay(dpy: c._XPrivDisplay, scr: usize) *c.Screen {
-            return @ptrCast(*c.Screen, &dpy.*.screens[scr]);
+            return @as(*c.Screen, @ptrCast(&dpy.*.screens[scr]));
         }
     };
 }
